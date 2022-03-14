@@ -10,19 +10,16 @@ import {
   PokemonErrorBoundary,
 } from '../pokemon'
 
-// 🐨 this is going to be our generic asyncReducer
+// 02 Ex-Cr-1 use useCallback to empower the user to customize memoization
 function asyncReducer(state, action) {
   switch (action.type) {
     case 'pending': {
-      // 🐨 replace "pokemon" with "data"
       return {status: 'pending', data: null, error: null}
     }
     case 'resolved': {
-      // 🐨 replace "pokemon" with "data" (in the action too!)
       return {status: 'resolved', data: action.data, error: null}
     }
     case 'rejected': {
-      // 🐨 replace "pokemon" with "data"
       return {status: 'rejected', data: null, error: action.error}
     }
     default: {
@@ -31,10 +28,9 @@ function asyncReducer(state, action) {
   }
 }
 
-function useAsync(asyncCallback,initialState,dependencies){
+function useAsync(asyncCallback,initialState){
   const [state, dispatch] = React.useReducer(asyncReducer, {
     status: 'idle',
-    // 🐨 this will need to be "data" instead of "pokemon"
     data: null,
     error: null,
     ...initialState
@@ -43,12 +39,6 @@ function useAsync(asyncCallback,initialState,dependencies){
   React.useEffect(() => {
     const promise = asyncCallback();
     if(!promise) return;
-    // 💰 this first early-exit bit is a little tricky, so let me give you a hint:
-    // const promise = asyncCallback()
-    // if (!promise) {
-    //   return
-    // }
-    // then you can dispatch and handle the promise etc...
 
     dispatch({type: 'pending'})
     promise.then(
@@ -59,32 +49,31 @@ function useAsync(asyncCallback,initialState,dependencies){
         dispatch({type: 'rejected', error})
       },
     )
-    // 🐨 you'll accept dependencies as an array and pass that here.
-    // 🐨 because of limitations with ESLint, you'll need to ignore
-    // the react-hooks/exhaustive-deps rule. We'll fix this in an extra credit.
-  }, dependencies);
-
+  
+  }, [asyncCallback]);
+//remving the dependencies from use callback as param
+// n adding the asyncCallback func as a dependencies
   return state;
 }
+
+//adding useCallback to prevent this func to reinitialize whenever comp rerenders.
+
 function PokemonInfo({pokemonName}) {
-  // 🐨 move both the useReducer and useEffect hooks to a custom hook called useAsync
-  // here's how you use it:
+  //created asyncCallback func as memoized version
+  const asyncCallback = React.useCallback(() => {
+    if (!pokemonName) {
+      return
+    }
+    return fetchPokemon(pokemonName)
+  },[pokemonName]);
+
+
   const state = useAsync(
-    () => {
-      if (!pokemonName) {
-        return
-      }
-      return fetchPokemon(pokemonName)
-    },
-    {status: pokemonName ? 'pending' : 'idle'},
-    [pokemonName]
+    //used asyncCallback func in memoized format in here.
+    asyncCallback,
+    {status: pokemonName ? 'pending' : 'idle'}
   );
-  // 🐨 so your job is to create a useAsync function that makes this work.
   
-
-  
-
-  // 🐨 this will change from "pokemon" to "data"
   const {data:pokemon, status, error} = state
 
   if (status === 'idle' || !pokemonName) {

@@ -1,12 +1,12 @@
-// useDebugValue: useMedia
-// http://localhost:3000/isolated/exercise/06.js
-
 import * as React from 'react'
 
+//1 -ExCr1 - use the format function
+
+const formatCountDebugValue = ({query,state}) => `\`${query}\` => ${state}`;
 function useMedia(query, initialState = false) {
   const [state, setState] = React.useState(initialState)
-  //this hook will not work inside component but will work in hook
-  React.useDebugValue(`\`${query}\` => ${state}`);
+  //2nd param will take the object in 1st arg as its arg n return the value to debug value
+  React.useDebugValue({query, state}, formatCountDebugValue);
   // 💰 here's the formatted label I use: `\`${query}\` => ${state}`
 
   React.useEffect(() => {

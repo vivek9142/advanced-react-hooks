@@ -10,19 +10,23 @@ import {
   PokemonErrorBoundary,
 } from '../pokemon'
 
-// 🐨 this is going to be our generic asyncReducer
+// 02 return a memoized run function from useAsync
+
+/*before the useasync implementation was not good as it accepted a
+memoized version of func that had async callback in the dependency
+list. so we instead made the user to useAsync to call the run func when they want
+to have the async func run. run takes the promise which dispatch pending action 
+until it is fetching data n so on.
+*/
 function asyncReducer(state, action) {
   switch (action.type) {
     case 'pending': {
-      // 🐨 replace "pokemon" with "data"
       return {status: 'pending', data: null, error: null}
     }
     case 'resolved': {
-      // 🐨 replace "pokemon" with "data" (in the action too!)
       return {status: 'resolved', data: action.data, error: null}
     }
     case 'rejected': {
-      // 🐨 replace "pokemon" with "data"
       return {status: 'rejected', data: null, error: action.error}
     }
     default: {
@@ -31,61 +35,45 @@ function asyncReducer(state, action) {
   }
 }
 
-function useAsync(asyncCallback,initialState,dependencies){
+function useAsync(initialState){
+  
   const [state, dispatch] = React.useReducer(asyncReducer, {
     status: 'idle',
-    // 🐨 this will need to be "data" instead of "pokemon"
     data: null,
     error: null,
     ...initialState
   });
+  
+  //separating the callback func concern into memoized version
 
-  React.useEffect(() => {
-    const promise = asyncCallback();
-    if(!promise) return;
-    // 💰 this first early-exit bit is a little tricky, so let me give you a hint:
-    // const promise = asyncCallback()
-    // if (!promise) {
-    //   return
-    // }
-    // then you can dispatch and handle the promise etc...
-
-    dispatch({type: 'pending'})
-    promise.then(
-      data => {
-        dispatch({type: 'resolved', data})
-      },
-      error => {
-        dispatch({type: 'rejected', error})
-      },
-    )
-    // 🐨 you'll accept dependencies as an array and pass that here.
-    // 🐨 because of limitations with ESLint, you'll need to ignore
-    // the react-hooks/exhaustive-deps rule. We'll fix this in an extra credit.
-  }, dependencies);
-
-  return state;
-}
-function PokemonInfo({pokemonName}) {
-  // 🐨 move both the useReducer and useEffect hooks to a custom hook called useAsync
-  // here's how you use it:
-  const state = useAsync(
-    () => {
-      if (!pokemonName) {
-        return
-      }
-      return fetchPokemon(pokemonName)
+  const run = React.useCallback(promise => {
+    dispatch({type:'pending'});
+    promise.then(data => {
+      dispatch({type:'resolved',data});
     },
-    {status: pokemonName ? 'pending' : 'idle'},
-    [pokemonName]
-  );
-  // 🐨 so your job is to create a useAsync function that makes this work.
-  
+    error => {
+      dispatch({type:'rejected',error});
+    })
+    //ading no dependency so it will never change n it will be memoized
+  },[]);
 
-  
+  //here returning the run callback func 
+  return {...state,run};
+}
 
-  // 🐨 this will change from "pokemon" to "data"
-  const {data:pokemon, status, error} = state
+function PokemonInfo({pokemonName}) {
+  const {data: pokemon, status, error, run} = useAsync({
+    status: pokemonName ? 'pending' : 'idle',
+  })
+  
+  React.useEffect(() => { 
+    if (!pokemonName) {
+      return
+    }
+    //calliing back run func with promise in args 
+    return run(fetchPokemon(pokemonName))
+  }, [pokemonName, run]);
+
 
   if (status === 'idle' || !pokemonName) {
     return 'Submit a pokemon'

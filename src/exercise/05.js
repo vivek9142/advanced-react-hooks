@@ -4,16 +4,42 @@
 import * as React from 'react'
 
 // 🐨 wrap this in a React.forwardRef and accept `ref` as the second argument
-function MessagesDisplay({messages}) {
+
+//2 step  - adding n gettign ref as 2nd arg
+function MessagesDisplay({messages},ref) {
   const containerRef = React.useRef()
   React.useLayoutEffect(() => {
     scrollToBottom()
   })
+  
+  //v1
+  // React.useLayoutEffect(()=>{
+  // ref.current = {
+  //   scrollToTop,
+  //   scrollToBottom
+  // }
+  // });
+
+  /*v2 using useImperativeHandle hook - Its a way to expose an 
+  imperative API through our declarative comp.So if you can't find a
+  good way to make a declarative api for some action that you want your
+  messages comp to take for updating scroll top prop of our container div
+
+  use useImperative handle hook to expose the imperative api to your comp
+
+  3rd- step - use useimperativeHandle on that ref,you  return all the func
+  that returns values you want to assign to current properties
+
+  */
+  React.useImperativeHandle(ref,()=> ({
+    scrollToTop,
+    scrollToBottom
+  }));
 
   // 💰 you're gonna want this as part of your imperative methods
-  // function scrollToTop() {
-  //   containerRef.current.scrollTop = 0
-  // }
+  function scrollToTop() {
+    containerRef.current.scrollTop = 0
+  }
   function scrollToBottom() {
     containerRef.current.scrollTop = containerRef.current.scrollHeight
   }
@@ -32,6 +58,9 @@ function MessagesDisplay({messages}) {
     </div>
   )
 }
+
+//1-step
+MessagesDisplay = React.forwardRef(MessagesDisplay);
 
 function App() {
   const messageDisplayRef = React.useRef()

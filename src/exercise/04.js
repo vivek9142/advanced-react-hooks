@@ -6,7 +6,13 @@ import * as React from 'react'
 function MessagesDisplay({messages}) {
   const containerRef = React.useRef()
   // 🐨 replace useEffect with useLayoutEffect
-  React.useEffect(() => {
+
+
+  // anytime you have a side-effect that is going to manipulate the dom in
+  //a way that iss observable to the user use useLayoutEffect and also used in the 
+  //scenarios where this effect is needed to run before all other effects
+  //like safeDispatch for dipspatch
+  React.useLayoutEffect(() => {
     containerRef.current.scrollTop = containerRef.current.scrollHeight
   })
 
